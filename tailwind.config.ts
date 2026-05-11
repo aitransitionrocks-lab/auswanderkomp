@@ -2,41 +2,43 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        navy: {
-          DEFAULT: "#0A1628",
-          light: "#1A2E48",
-          faint: "#E6F1FB",
+        // Forest palette aus shared.jsx — Tannengrün · Kupfer
+        paper: "#F3EDE2",
+        paperAlt: "#EBE3D3",
+        highlight: "#E8DCC2",
+        ink: "#1F2A24",
+        inkSoft: "#44504A",
+        muted: "#7A7164",
+        line: "#D8CDB8",
+        fir: {
+          DEFAULT: "#1E3A34",
+          deep: "#162A25",
         },
-        teal: {
-          DEFAULT: "#0F6E56",
-          mid: "#1D9E75",
-          light: "#E1F5EE",
-          faint: "#F0FAF6",
+        copper: {
+          DEFAULT: "#C4926B",
+          deep: "#A67353",
         },
-        amber: {
-          brand: "#BA7517",
-          light: "#FAEEDA",
-          faint: "#FDF7EC",
-        },
-        risk: {
-          red: "#B91C1C",
-          redBg: "#FEE2E2",
-          yellow: "#B45309",
-          yellowBg: "#FEF3C7",
-          green: "#047857",
-          greenBg: "#D1FAE5",
-        },
+        // Risk-Ampel
+        riskGreen: "#5C8B62",
+        riskYellow: "#C4926B",
+        riskRed: "#A33B2A",
       },
       fontFamily: {
-        display: ["var(--font-display)", "sans-serif"],
-        body: ["var(--font-body)", "sans-serif"],
+        serif: ["var(--ak-serif)", "Georgia", "serif"],
+        sans: ["var(--ak-sans)", "system-ui", "sans-serif"],
+      },
+      maxWidth: {
+        page: "1040px",
+      },
+      borderRadius: {
+        pill: "999px",
+        card: "12px",
       },
     },
   },

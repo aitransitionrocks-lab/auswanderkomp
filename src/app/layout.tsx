@@ -1,27 +1,40 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, DM_Sans } from "next/font/google";
+import { Fraunces, Inter_Tight } from "next/font/google";
+import { PostHogInit } from "@/components/shared/PostHogInit";
 import "./globals.css";
 
-const display = Plus_Jakarta_Sans({
+const serif = Fraunces({
   subsets: ["latin"],
-  variable: "--font-display",
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
+  variable: "--ak-serif",
+  display: "swap",
 });
 
-const body = DM_Sans({
+const sans = Inter_Tight({
   subsets: ["latin"],
-  variable: "--font-body",
+  weight: ["400", "500", "600"],
+  variable: "--ak-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Auswander-Kompass | Ihr persönlicher Fahrplan",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL ?? "https://auswanderkompass.de"
+  ),
+  title: {
+    default: "Auswander-Kompass — Orientierung · Reihenfolge · Klarheit",
+    template: "%s · Auswander-Kompass",
+  },
   description:
-    "In 10 Fragen zu Ihrer persönlichen Einschätzung — und einem strukturierten Ablaufplan für Ihren Umzug ins Ausland.",
+    "Beim Auswandern entscheidet die Reihenfolge — und Fehler können teuer werden. In 3 Minuten zur persönlichen Einschätzung.",
   openGraph: {
     title: "Auswander-Kompass",
-    description: "Ein strukturierter Fahrplan statt noch mehr Informationen.",
+    description: "Orientierung · Reihenfolge · Klarheit",
     locale: "de_DE",
     type: "website",
   },
+  alternates: { canonical: "/" },
 };
 
 export default function RootLayout({
@@ -29,9 +42,8 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="de">
-      <body
-        className={`${display.variable} ${body.variable} font-body antialiased bg-white text-navy`}
-      >
+      <body className={`${serif.variable} ${sans.variable} font-sans antialiased`}>
+        <PostHogInit />
         {children}
       </body>
     </html>

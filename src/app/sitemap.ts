@@ -1,0 +1,12 @@
+import type { MetadataRoute } from "next";
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ?? "https://auswanderkompass.de";
+  const now = new Date();
+  return [
+    { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
+    { url: `${baseUrl}/impressum`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/datenschutz`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+  ];
+}
