@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { track } from "@/lib/track";
 import type { Segment } from "@/lib/scoring";
+import type { CountryCode } from "@/lib/questions";
 
 interface Props {
   segment: Segment;
@@ -10,9 +11,17 @@ interface Props {
   ctaButton: string;
   answers: number[];
   score: number;
+  country: CountryCode;
 }
 
-export function PaywallCTA({ segment, ctaHeadline, ctaButton, answers, score }: Props) {
+export function PaywallCTA({
+  segment,
+  ctaHeadline,
+  ctaButton,
+  answers,
+  score,
+  country,
+}: Props) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,13 +31,13 @@ export function PaywallCTA({ segment, ctaHeadline, ctaButton, answers, score }: 
     if (!email) return;
     setLoading(true);
     setError(null);
-    track("checkout_start", { segment, score });
+    track("checkout_start", { segment, score, country });
 
     try {
       const res = await fetch("/api/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ segment, answers, score, email }),
+        body: JSON.stringify({ segment, answers, score, email, country }),
       });
       const data = await res.json();
       if (data.url) {

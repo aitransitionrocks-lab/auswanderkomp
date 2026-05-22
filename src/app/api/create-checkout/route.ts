@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { stripeReady, envBaseUrl } from "@/lib/env";
 import { SEGMENTS } from "@/lib/segments";
 import type { Segment } from "@/lib/scoring";
+import { normalizeCountry } from "@/lib/questions";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ interface Body {
   answers: number[];
   score: number;
   email: string;
+  country?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -29,6 +31,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Body;
     const { segment, answers, score, email } = body;
+    const country = normalizeCountry(body.country);
 
     if (!email || !segment || !Array.isArray(answers) || answers.length !== 10) {
       return NextResponse.json(
@@ -64,6 +67,7 @@ export async function POST(req: NextRequest) {
         segment,
         score: String(score),
         answers: JSON.stringify(answers),
+        country,
       },
     });
 

@@ -1,5 +1,32 @@
 export type Segment = "dreamer" | "planer" | "fortgeschrittener" | "starter";
 
+// Zielländer = Keys aus tasks.json + "unklar".
+export const COUNTRIES = [
+  { code: "portugal", label: "Portugal" },
+  { code: "spanien", label: "Spanien" },
+  { code: "suedzypern", label: "Süd-Zypern" },
+  { code: "nordzypern", label: "Nord-Zypern" },
+  { code: "dubai", label: "Dubai / VAE" },
+  { code: "thailand", label: "Thailand" },
+  { code: "argentinien", label: "Argentinien" },
+  { code: "panama", label: "Panama" },
+  { code: "usa", label: "USA" },
+  { code: "unklar", label: "Noch unklar" },
+] as const;
+
+export type CountryCode = (typeof COUNTRIES)[number]["code"];
+
+const COUNTRY_CODES = COUNTRIES.map((c) => c.code) as readonly string[];
+
+export function normalizeCountry(raw: string | undefined | null): CountryCode {
+  if (raw && COUNTRY_CODES.includes(raw)) return raw as CountryCode;
+  return "unklar";
+}
+
+export function countryLabel(code: CountryCode): string {
+  return COUNTRIES.find((c) => c.code === code)?.label ?? "Noch unklar";
+}
+
 export interface QuizOption {
   option: "A" | "B" | "C" | "D";
   score: 1 | 2 | 3 | 4;

@@ -5,6 +5,7 @@ import {
   RISK_LABEL,
 } from "@/lib/scoring";
 import type { SegmentContent } from "@/lib/segments";
+import { countryLabel, type CountryCode } from "@/lib/questions";
 import {
   getPriorityTasks,
   deadlineLabel,
@@ -158,10 +159,22 @@ interface Props {
   score: number;
   risk: RiskProfile;
   email: string;
+  country: CountryCode;
 }
 
-export function ResultPDF({ segment, segmentContent, score, risk, email }: Props) {
-  const tasks: Task[] = getPriorityTasks(segment, risk);
+export function ResultPDF({
+  segment,
+  segmentContent,
+  score,
+  risk,
+  email,
+  country,
+}: Props) {
+  const tasks: Task[] = getPriorityTasks(segment, risk, country);
+  const fahrplanLabel =
+    country === "unklar"
+      ? "Top-Prioritäten für die häufigsten Zielländer"
+      : `Fahrplan für ${countryLabel(country)}`;
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -231,7 +244,7 @@ export function ResultPDF({ segment, segmentContent, score, risk, email }: Props
             <Text style={styles.brandSub}>PRIORISIERTER FAHRPLAN</Text>
           </View>
           <Text style={[styles.brandSub, { textAlign: "right" }]}>
-            {tasks.length} Aufgaben für dein Segment
+            {fahrplanLabel}
           </Text>
         </View>
 

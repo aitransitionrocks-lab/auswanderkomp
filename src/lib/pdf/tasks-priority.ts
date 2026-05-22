@@ -1,5 +1,6 @@
 import tasksData from "@/data/tasks.json";
 import type { RiskProfile, Segment } from "@/lib/scoring";
+import type { CountryCode } from "@/lib/questions";
 
 interface RawTask {
   phase: "prep" | "exit" | "arrival";
@@ -22,19 +23,50 @@ const SEGMENT_BUDGET: Record<Segment, number> = {
   starter: 14,
 };
 
+// Generische Top-Tasks: kommen in ≥5 Ländern vor (= länderübergreifend relevant).
+function genericTopTasks(data: Record<string, RawTask[]>): RawTask[] {
+  const count = new Map<string, { task: RawTask; n: number }>();
+  for (const tasks of Object.values(data)) {
+    for (const t of tasks) {
+      const e = count.get(t.title);
+      if (e) e.n += 1;
+      else count.set(t.title, { task: t, n: 1 });
+    }
+  }
+  const generic = [...count.values()]
+    .filter((e) => e.n >= 5)
+    .map((e) => e.task);
+  // Fallback: falls zu wenige generische, alle dedupliziert
+  if (generic.length >= 5) return generic;
+  const seen = new Set<string>();
+  const all: RawTask[] = [];
+  for (const tasks of Object.values(data)) {
+    for (const t of tasks) {
+      if (seen.has(t.title)) continue;
+      seen.add(t.title);
+      all.push(t);
+    }
+  }
+  return all;
+}
+
 /**
- * Country-agnostic priority list:
- * Merge alle 9 Länder, dedupliziere nach Titel,
- * sortiere nach Priorität, schneide auf Segment-Budget.
+ * Country-spezifische Priority-Liste.
+ * country='unklar' → generische länderübergreifende Tasks.
+ * Sonst → Tasks des gewählten Landes. Risk-Boost + Cut auf Segment-Budget.
  */
 export function getPriorityTasks(
   segment: Segment,
-  risk: RiskProfile
+  risk: RiskProfile,
+  country: CountryCode
 ): RawTask[] {
-  const all = Object.values(tasksData as Record<string, RawTask[]>).flat();
+  const data = tasksData as Record<string, RawTask[]>;
+  const base =
+    country === "unklar" ? genericTopTasks(data) : data[country] ?? [];
+
   const seen = new Set<string>();
   const dedup: RawTask[] = [];
-  for (const t of all) {
+  for (const t of base) {
     if (seen.has(t.title)) continue;
     seen.add(t.title);
     dedup.push(t);

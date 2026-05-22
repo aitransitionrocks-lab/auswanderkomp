@@ -52,11 +52,8 @@ export function QuestionStep({ step }: Props) {
 
     track("q_answered", { q_num: step, score: selected });
 
-    if (step >= TOTAL_QUESTIONS) {
-      router.push("/check/ergebnis");
-    } else {
-      router.push(`/check/${step + 1}`);
-    }
+    // Nach Frage 10 → Country-Picker (Schritt 11), dann Ergebnis.
+    router.push(`/check/${step + 1}`);
   }
 
   function back() {
@@ -142,7 +139,7 @@ export function QuestionStep({ step }: Props) {
             disabled={selected === null}
             className="inline-flex items-center gap-2 px-6 py-3.5 bg-fir text-paper rounded-pill font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-fir-deep transition-colors"
           >
-            {step >= TOTAL_QUESTIONS ? "Ergebnis ansehen" : "Weiter"} →
+            Weiter →
           </button>
         </div>
       </section>

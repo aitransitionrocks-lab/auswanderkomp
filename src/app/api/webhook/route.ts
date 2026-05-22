@@ -1,78 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { renderToBuffer } from "@react-pdf/renderer";
-import {
-  stripeReady,
-  stripeWebhookReady,
-  resendReady,
-  envBaseUrl,
-} from "@/lib/env";
-import {
-  calculateScore,
-  getSegment,
-  getRiskProfile,
-  type Segment,
-} from "@/lib/scoring";
+import { stripeReady, stripeWebhookReady, resendReady } from "@/lib/env";
+import { calculateScore, getSegment, getRiskProfile } from "@/lib/scoring";
 import { SEGMENTS } from "@/lib/segments";
 import { ResultPDF } from "@/lib/pdf/ResultPDF";
 import { renderResultEmailHtml } from "@/lib/email/template";
+import { parseMetadataAnswers } from "@/lib/webhook/parse";
+import {
+  wasEventProcessed,
+  markEventProcessed,
+} from "@/lib/webhook/idempotency";
+import { handleProcessingFailure } from "@/lib/webhook/failure";
+import { sendEmail } from "@/lib/email/send";
+import { normalizeCountry, type CountryCode } from "@/lib/questions";
 
 export const dynamic = "force-dynamic";
 
-async function sendReport(
-  email: string,
-  segment: Segment,
-  score: number,
-  answers: number[]
-) {
+async function deliverReport(opts: {
+  email: string;
+  answers: number[];
+  country: CountryCode;
+}) {
+  const score = calculateScore(opts.answers);
+  const segment = getSegment(score);
   const segmentContent = SEGMENTS[segment];
-  const risk = getRiskProfile(answers);
-  const baseUrl = envBaseUrl();
+  const risk = getRiskProfile(opts.answers);
 
-  // PDF generieren
+  // PDF generieren (wirft bei Render-Fehler → fängt der Caller)
   const pdfBuffer = await renderToBuffer(
     ResultPDF({
       segment,
       segmentContent,
       score,
       risk,
-      email,
+      email: opts.email,
+      country: opts.country,
     })
   );
 
   if (!resendReady()) {
     console.log(
-      `[webhook] Resend not configured — skip email for ${email} (segment=${segment})`
+      `[webhook] Resend not configured — skip email for ${opts.email} (segment=${segment})`
     );
     return;
   }
 
-  const html = renderResultEmailHtml({ segmentContent, score, baseUrl });
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "Auswander-Kompass <bericht@auswanderkompass.de>",
-      reply_to: "kontakt@auswanderkompass.de",
-      to: email,
-      subject: segmentContent.emailSubject,
-      html,
-      attachments: [
-        {
-          filename: "Auswander-Kompass-Bericht.pdf",
-          content: pdfBuffer.toString("base64"),
-        },
-      ],
-    }),
+  const html = renderResultEmailHtml({
+    segmentContent,
+    score,
+    baseUrl: process.env.NEXT_PUBLIC_BASE_URL ?? "https://auswanderkompass.de",
   });
 
-  if (!res.ok) {
-    console.error("[webhook] Resend send failed:", await res.text());
-  }
+  // sendEmail wirft bei finalem Fehlschlag → fängt der Caller (Fallback-Pfad)
+  await sendEmail({
+    to: opts.email,
+    subject: segmentContent.emailSubject,
+    html,
+    attachments: [
+      {
+        filename: "Auswander-Kompass-Bericht.pdf",
+        content: pdfBuffer.toString("base64"),
+      },
+    ],
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -100,41 +91,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const email =
-      session.customer_email ?? session.customer_details?.email ?? "";
-    const segment = (session.metadata?.segment as Segment) ?? "planer";
-    const score = Number(session.metadata?.score ?? "0");
-
-    let answers: number[] = [];
-    try {
-      answers = JSON.parse(session.metadata?.answers ?? "[]");
-    } catch {
-      answers = [];
-    }
-
-    if (
-      email &&
-      answers.length === 10 &&
-      ["dreamer", "planer", "fortgeschrittener", "starter"].includes(segment)
-    ) {
-      try {
-        const verifiedScore = calculateScore(answers);
-        const verifiedSegment = getSegment(verifiedScore);
-        await sendReport(email, verifiedSegment, verifiedScore, answers);
-      } catch (err) {
-        console.error("[webhook] report send error:", err);
-      }
-    } else {
-      console.warn("[webhook] incomplete metadata", {
-        email: !!email,
-        answersLen: answers.length,
-        segment,
-        score,
-      });
-    }
+  // Frühe Filter: nur das relevante Event
+  if (event.type !== "checkout.session.completed") {
+    return NextResponse.json({ received: true });
   }
 
-  return NextResponse.json({ received: true });
+  const session = event.data.object as Stripe.Checkout.Session;
+  const eventId = event.id;
+  const sessionId = session.id;
+  const email =
+    session.customer_email ?? session.customer_details?.email ?? null;
+
+  // Idempotenz: Duplicate-Events überspringen
+  if (await wasEventProcessed(eventId)) {
+    return NextResponse.json({ received: true, status: "duplicate" });
+  }
+
+  try {
+    const answers = parseMetadataAnswers(session.metadata?.answers);
+    const country = normalizeCountry(session.metadata?.country);
+
+    if (!email) {
+      throw new Error("Keine E-Mail-Adresse in der Stripe-Session");
+    }
+
+    await deliverReport({ email, answers, country });
+    await markEventProcessed(eventId, { status: "success" });
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    // Fallback-Pfad: jeder Fehler → Operator-Alert + Kunden-Fallback-Mail
+    await handleProcessingFailure({
+      eventId,
+      sessionId,
+      email,
+      error: err,
+      metadata: session.metadata,
+    });
+    return NextResponse.json({ received: true });
+  }
 }

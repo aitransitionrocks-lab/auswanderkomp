@@ -17,6 +17,7 @@ import {
 } from "@/lib/scoring";
 import { SEGMENTS } from "@/lib/segments";
 import { loadAnswers } from "@/lib/answers";
+import { normalizeCountry, type CountryCode } from "@/lib/questions";
 import { track } from "@/lib/track";
 
 export default function ErgebnisPage() {
@@ -26,6 +27,7 @@ export default function ErgebnisPage() {
     score: number;
     segment: Segment;
     risk: RiskProfile;
+    country: CountryCode;
   } | null>(null);
 
   useEffect(() => {
@@ -38,11 +40,13 @@ export default function ErgebnisPage() {
       const score = calculateScore(stored.answers);
       const segment = getSegment(score);
       const risk = getRiskProfile(stored.answers);
-      setState({ answers: stored.answers, score, segment, risk });
+      const country = normalizeCountry(stored.country);
+      setState({ answers: stored.answers, score, segment, risk, country });
       track("diagnose_complete", {
         segment,
         score,
         risk_level: worstRisk(risk),
+        country,
       });
       track("result_view", { segment, score });
       track("paywall_view", { segment });
@@ -151,6 +155,7 @@ export default function ErgebnisPage() {
             ctaButton={seg.ctaButton}
             answers={state.answers}
             score={state.score}
+            country={state.country}
           />
         </div>
       </section>

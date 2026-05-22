@@ -3,9 +3,34 @@ import {
   calculateScore,
   getSegment,
   getRiskProfile,
+  type RiskProfile,
 } from "@/lib/scoring";
+import { parseMetadataAnswers } from "@/lib/webhook/parse";
+import { getPriorityTasks } from "@/lib/pdf/tasks-priority";
 
 export const dynamic = "force-dynamic";
+
+const ALL_GREEN: RiskProfile = {
+  steuerRecht: "green",
+  absicherung: "green",
+  planungTiming: "green",
+  familieUmfeld: "green",
+};
+const ALL_RED: RiskProfile = {
+  steuerRecht: "red",
+  absicherung: "red",
+  planungTiming: "red",
+  familieUmfeld: "red",
+};
+
+function threwOn(fn: () => unknown): boolean {
+  try {
+    fn();
+    return false;
+  } catch {
+    return true;
+  }
+}
 
 interface Case {
   name: string;
@@ -119,6 +144,68 @@ function run(): { cases: Case[]; passed: number; failed: number } {
     name: "getSegment wirft bei score < 10",
     expect: { threw: true },
     actual: { threw: threwRange },
+  });
+
+  // ─── F6: parseMetadataAnswers ───
+  cases.push({
+    name: "parseMetadataAnswers wirft bei undefined",
+    expect: { threw: true },
+    actual: { threw: threwOn(() => parseMetadataAnswers(undefined)) },
+  });
+  cases.push({
+    name: "parseMetadataAnswers wirft bei '{}' (kein Array)",
+    expect: { threw: true },
+    actual: { threw: threwOn(() => parseMetadataAnswers("{}")) },
+  });
+  cases.push({
+    name: "parseMetadataAnswers wirft bei Länge != 10",
+    expect: { threw: true },
+    actual: { threw: threwOn(() => parseMetadataAnswers("[1,2,3]")) },
+  });
+  cases.push({
+    name: "parseMetadataAnswers wirft bei Wert > 4",
+    expect: { threw: true },
+    actual: {
+      threw: threwOn(() => parseMetadataAnswers("[1,2,3,4,5,6,7,8,9,5]")),
+    },
+  });
+  cases.push({
+    name: "parseMetadataAnswers liefert valides Array",
+    expect: { result: "[1,2,3,4,1,2,3,4,1,2]" },
+    actual: {
+      result: JSON.stringify(
+        parseMetadataAnswers("[1,2,3,4,1,2,3,4,1,2]")
+      ),
+    },
+  });
+
+  // ─── F5: getPriorityTasks mit Country ───
+  const ptPortugal = getPriorityTasks("dreamer", ALL_GREEN, "portugal");
+  cases.push({
+    name: "getPriorityTasks(dreamer, portugal) → max 6, nicht leer",
+    expect: { withinBudget: true, nonEmpty: true },
+    actual: {
+      withinBudget: ptPortugal.length <= 6,
+      nonEmpty: ptPortugal.length > 0,
+    },
+  });
+  const ptUsa = getPriorityTasks("starter", ALL_RED, "usa");
+  cases.push({
+    name: "getPriorityTasks(starter, usa) → max 14, nicht leer",
+    expect: { withinBudget: true, nonEmpty: true },
+    actual: {
+      withinBudget: ptUsa.length <= 14,
+      nonEmpty: ptUsa.length > 0,
+    },
+  });
+  const ptUnklar = getPriorityTasks("planer", ALL_RED, "unklar");
+  cases.push({
+    name: "getPriorityTasks(planer, unklar) → max 9, generisch nicht leer",
+    expect: { withinBudget: true, nonEmpty: true },
+    actual: {
+      withinBudget: ptUnklar.length <= 9,
+      nonEmpty: ptUnklar.length > 0,
+    },
   });
 
   let passed = 0;
