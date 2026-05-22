@@ -9,6 +9,9 @@ const serif = Fraunces({
   style: ["normal", "italic"],
   variable: "--ak-serif",
   display: "swap",
+  preload: true,
+  adjustFontFallback: true,
+  fallback: ["Georgia", "Times New Roman", "serif"],
 });
 
 const sans = Inter_Tight({
@@ -16,6 +19,9 @@ const sans = Inter_Tight({
   weight: ["400", "500", "600"],
   variable: "--ak-sans",
   display: "swap",
+  preload: true,
+  adjustFontFallback: true,
+  fallback: ["system-ui", "Segoe UI", "Arial", "sans-serif"],
 });
 
 export const metadata: Metadata = {
