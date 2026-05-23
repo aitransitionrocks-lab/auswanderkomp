@@ -14,6 +14,12 @@ import {
 import { handleProcessingFailure } from "@/lib/webhook/failure";
 import { sendEmail } from "@/lib/email/send";
 import { normalizeCountry, type CountryCode } from "@/lib/questions";
+import {
+  createOrUpdateUserFromPurchase,
+  generateMagicLink,
+} from "@/lib/supabase/user-creation";
+import { supabaseAdminReady } from "@/lib/supabase/admin";
+import { sendOperatorAlert } from "@/lib/webhook/alert";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +122,53 @@ export async function POST(req: NextRequest) {
     }
 
     await deliverReport({ email, answers, country });
+
+    // Phase 1a: Supabase-Sync (zusätzlich zu PDF/Mail).
+    // Fehler hier blocken NICHT den Webhook — PDF+Mail sind bereits raus.
+    if (supabaseAdminReady()) {
+      try {
+        const score = calculateScore(answers);
+        const segment = getSegment(score);
+        await createOrUpdateUserFromPurchase({
+          email,
+          stripeCustomerId: (session.customer as string) ?? null,
+          stripeSessionId: sessionId,
+          stripeEventId: eventId,
+          productType: "quiz_27",
+          amountCents: 2700,
+          quizAnswers: answers,
+          quizScore: score,
+          quizSegment: segment,
+          quizCountry: country,
+        });
+
+        // Dashboard-Magic-Link separat per Mail (Welcome-Login)
+        const baseUrl =
+          process.env.NEXT_PUBLIC_BASE_URL ?? "https://auswanderkompass.de";
+        const magicLink = await generateMagicLink(
+          email,
+          `${baseUrl}/app/dashboard`
+        );
+        if (magicLink) {
+          await sendEmail({
+            to: email,
+            subject: "Dein Dashboard-Zugang zum Auswander-Kompass",
+            html: `<p>Du hast deinen Bericht erhalten — und kannst jetzt zusätzlich dein Dashboard öffnen.</p>
+<p><a href="${magicLink}">Dashboard öffnen</a></p>
+<p style="color:#7A7164;font-size:12px">Der Link ist 24 Stunden gültig. Du kannst dich später jederzeit über <a href="${baseUrl}/login">${baseUrl}/login</a> einloggen.</p>`,
+          });
+        }
+      } catch (err) {
+        console.error("[webhook] supabase-sync failed:", err);
+        await sendOperatorAlert({
+          subject: "[Auswander-Kompass] Supabase-Sync fehlgeschlagen",
+          body: `Event: ${eventId}\nKunde: ${email}\nFehler: ${
+            err instanceof Error ? err.message : String(err)
+          }\n\nPDF + Mail wurden trotzdem versendet. Manuell prüfen.`,
+        });
+      }
+    }
+
     await markEventProcessed(eventId, { status: "success" });
     return NextResponse.json({ received: true });
   } catch (err) {

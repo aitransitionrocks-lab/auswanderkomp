@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CompassGlyph } from "@/components/brand/CompassGlyph";
+import { UpsellCard } from "@/components/danke/UpsellCard";
 
 export const metadata = {
   title: "Danke",
@@ -72,6 +73,8 @@ export default function DankePage() {
           >
             ← Zurück zur Startseite
           </Link>
+
+          <UpsellCard />
         </div>
       </section>
 

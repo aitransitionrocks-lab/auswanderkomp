@@ -89,9 +89,55 @@ export default function DatenschutzPage() {
               <ul className="list-disc pl-5 space-y-1.5">
                 <li>Vercel Inc. (Hosting) — Region Frankfurt</li>
                 <li>Stripe Payments Europe (Zahlungsabwicklung)</li>
-                <li>Resend Inc. (Bericht-Zustellung per E-Mail)</li>
+                <li>Resend Inc. (Bericht-Zustellung + Retargeting-Mails)</li>
                 <li>PostHog Inc. (Produkt-Analytics, EU-Instanz)</li>
+                <li>Supabase Inc. (Datenbank + Auth + Document-Storage) — Server Frankfurt</li>
               </ul>
+              <p className="mt-3 text-[13px] text-muted">
+                Mit allen Dienstleistern bestehen Auftragsverarbeitungsverträge nach Art. 28 DSGVO.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="font-serif text-[20px] text-ink mb-2">
+                4a. Dashboard-Konto (Phase 1a)
+              </h2>
+              <p>
+                Bei Erwerb des Lifetime-Dashboards (97 €) verarbeiten wir
+                zusätzlich: Ihre E-Mail-Adresse, optional ein bcrypt-gehashtes
+                Passwort oder einen Google-OAuth-Identifier, Ihre
+                Aufgaben-Fortschritte (Status, Daten), hochgeladene Dokumente +
+                deren Metadaten, sowie Sharing-Tokens. Rechtsgrundlage: Art. 6
+                Abs. 1 lit. b DSGVO (Vertragserfüllung). Speicherdauer: Bis zur
+                Löschung Ihres Kontos oder maximal 5 Jahre nach letzter
+                Aktivität.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="font-serif text-[20px] text-ink mb-2">
+                4b. Dokumenten-Tresor
+              </h2>
+              <p>
+                Hochgeladene Dokumente werden in Supabase Storage (AES-256 at
+                rest, EU-Region) gespeichert. Zugriff nur über Ihren
+                authentifizierten Account oder durch von Ihnen ausgestellte
+                Sharing-Links. Speicherdauer: Bis zur Löschung durch Sie.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="font-serif text-[20px] text-ink mb-2">
+                4c. Retargeting-E-Mails
+              </h2>
+              <p>
+                Nach Ihrem 27 €-Kauf erhalten Sie über 21 Tage hinweg bis zu
+                fünf E-Mails zu unserem Dashboard-Angebot (97 € einmalig).
+                Rechtsgrundlage: § 7 Abs. 3 UWG i. V. m. Art. 6 Abs. 1 lit. f
+                DSGVO (berechtigtes Interesse Direktwerbung für eigenes
+                ähnliches Produkt). Widerspruch jederzeit per Klick auf den
+                Abmeldelink in jeder E-Mail.
+              </p>
             </section>
 
             <section>
