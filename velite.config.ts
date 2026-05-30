@@ -28,13 +28,14 @@ export default defineConfig({
           coverImage: s.string(),
           coverImageAlt: s.string().min(3),
           draft: s.boolean().default(false),
+          featured: s.boolean().default(false),
           content: s.mdx(),
           toc: s.toc(),
           metadata: s.metadata(),
         })
         .transform((data) => ({
           ...data,
-          url: `/blog/${data.slug}`,
+          url: `/blog/${data.category}/${data.slug}`,
           readingTime: Math.max(
             1,
             Math.round(data.metadata.wordCount / GERMAN_WPM)

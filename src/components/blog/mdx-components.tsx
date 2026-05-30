@@ -3,6 +3,7 @@ import { Callout } from "./Callout";
 import { ComparisonTable } from "./ComparisonTable";
 import { FAQBlock } from "./FAQBlock";
 import { QuizCTABox } from "./QuizCTABox";
+import { LeadMagnetInline } from "./LeadMagnetInline";
 
 // Component-Map für MDX. Custom-Components + getunte HTML-Defaults.
 export const mdxComponents = {
@@ -10,6 +11,8 @@ export const mdxComponents = {
   ComparisonTable,
   FAQBlock,
   QuizCTABox,
+  QuizCTA: QuizCTABox, // Alias für Doc-Spec-Kompatibilität
+  LeadMagnetInline,
   h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h2
       className="font-serif text-[28px] leading-[1.2] text-fir tracking-tight mt-12 mb-4 scroll-mt-24"

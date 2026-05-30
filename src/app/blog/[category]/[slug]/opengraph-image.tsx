@@ -7,7 +7,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }));
+  return getAllPosts().map((p) => ({ category: p.category, slug: p.slug }));
 }
 
 async function loadFont(weight: number): Promise<ArrayBuffer | null> {

@@ -489,8 +489,14 @@ export default function LandingPage() {
             <CompassGlyph size={20} stroke="#7A7164" accent="#7A7164" />
             <span>Auswander-Kompass</span>
           </div>
-          <div className="text-right max-w-[55ch]">
-            <Link href="/impressum" className="hover:text-ink mr-3">
+          <div className="text-right max-w-[55ch] space-x-3">
+            <Link href="/blog" className="hover:text-ink">
+              Guides
+            </Link>
+            <Link href="/start" className="hover:text-ink">
+              Start
+            </Link>
+            <Link href="/impressum" className="hover:text-ink">
               Impressum
             </Link>
             <Link href="/datenschutz" className="hover:text-ink">

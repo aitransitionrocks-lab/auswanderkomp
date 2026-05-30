@@ -1,24 +1,37 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getAllPosts, getPostBySlug, getRelatedPosts } from "@/lib/blog/posts";
+import {
+  getAllPosts,
+  getPostBySlug,
+  getRelatedPosts,
+} from "@/lib/blog/posts";
 import { MDXContent } from "@/components/blog/MDXContent";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { QuizCTABox } from "@/components/blog/QuizCTABox";
 import { NewsletterBox } from "@/components/blog/NewsletterBox";
 import { AuthorBox } from "@/components/blog/AuthorBox";
-import { CATEGORY_LABEL } from "@/lib/blog/meta";
+import { CategoryBadge } from "@/components/blog/CategoryBadge";
+import { CATEGORY_LABEL, type Category } from "@/lib/blog/meta";
 
-export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }));
+interface Params {
+  category: string;
+  slug: string;
 }
 
-export function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Metadata {
+export function generateStaticParams() {
+  return getAllPosts().map((p) => ({ category: p.category, slug: p.slug }));
+}
+
+function findPost(params: Params) {
   const post = getPostBySlug(params.slug);
+  if (!post) return null;
+  if (post.category !== params.category) return null;
+  return post;
+}
+
+export function generateMetadata({ params }: { params: Params }): Metadata {
+  const post = findPost(params);
   if (!post) return {};
   return {
     title: post.title,
@@ -37,13 +50,14 @@ export function generateMetadata({
   };
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
-  const post = getPostBySlug(params.slug);
+export default function ArticlePage({ params }: { params: Params }) {
+  const post = findPost(params);
   if (!post) notFound();
 
   const related = getRelatedPosts(post);
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ?? "https://auswanderkompass.de";
+  const category = post.category as Category;
 
   const articleLd = {
     "@context": "https://schema.org",
@@ -52,11 +66,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     description: post.description,
     datePublished: post.publishedAt,
     dateModified: post.updatedAt ?? post.publishedAt,
-    author: { "@type": "Person", name: "Peter Hoyer" },
-    publisher: {
-      "@type": "Organization",
-      name: "Auswander-Kompass",
-    },
+    author: { "@type": "Person", name: "Peter" },
+    publisher: { "@type": "Organization", name: "Auswander-Kompass" },
     mainEntityOfPage: `${baseUrl}${post.url}`,
     image: `${baseUrl}${post.coverImage}`,
   };
@@ -69,8 +80,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       {
         "@type": "ListItem",
         position: 2,
-        name: CATEGORY_LABEL[post.category],
-        item: `${baseUrl}/blog/kategorie/${post.category}`,
+        name: CATEGORY_LABEL[category],
+        item: `${baseUrl}/blog/kategorie/${category}`,
       },
       {
         "@type": "ListItem",
@@ -92,23 +103,22 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
 
-      {/* Breadcrumb */}
       <nav className="text-[13px] text-muted mb-8" aria-label="Breadcrumb">
         <Link href="/blog" className="hover:text-ink">
           Blog
         </Link>
         <span className="mx-2">·</span>
         <Link
-          href={`/blog/kategorie/${post.category}`}
+          href={`/blog/kategorie/${category}`}
           className="hover:text-ink"
         >
-          {CATEGORY_LABEL[post.category]}
+          {CATEGORY_LABEL[category]}
         </Link>
       </nav>
 
-      {/* Article Header */}
       <header className="max-w-[760px]">
-        <h1 className="font-serif text-3xl md:text-[44px] leading-[1.1] tracking-[-0.02em] text-ink mb-4 text-balance">
+        <CategoryBadge category={category} />
+        <h1 className="mt-3 font-serif text-3xl md:text-[44px] leading-[1.1] tracking-[-0.02em] text-ink mb-4 text-balance">
           {post.title}
         </h1>
         <p className="text-[18px] text-inkSoft leading-[1.55] mb-5">
@@ -118,12 +128,9 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           <span>{formatDate(post.publishedAt)}</span>
           <span>·</span>
           <span>{post.readingTime} Min Lesezeit</span>
-          <span>·</span>
-          <span>{CATEGORY_LABEL[post.category]}</span>
         </div>
       </header>
 
-      {/* Content + Sidebar */}
       <div className="mt-10 grid lg:grid-cols-[1fr_280px] gap-10 lg:gap-16 items-start">
         <article className="max-w-[760px] min-w-0">
           <MDXContent code={post.content} />
@@ -150,7 +157,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           )}
         </article>
 
-        {/* Sticky Sidebar (Desktop) */}
         <aside className="hidden lg:block sticky top-10 space-y-8">
           <TableOfContents toc={post.toc} />
           <QuizCTABox variant="main" />
