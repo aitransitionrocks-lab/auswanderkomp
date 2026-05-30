@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         ? { customer: customerId }
         : { customer_email: prevSession.customer_details?.email ?? undefined }),
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${baseUrl}/app/dashboard?welcome=true`,
+      success_url: `${baseUrl}/dashboard?welcome=true`,
       cancel_url: `${baseUrl}/danke?session_id=${previousSessionId}`,
       locale: "de",
       metadata: {

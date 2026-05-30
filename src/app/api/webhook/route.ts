@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
           process.env.NEXT_PUBLIC_BASE_URL ?? "https://auswanderkompass.de";
         const magicLink = await generateMagicLink(
           email,
-          `${baseUrl}/app/dashboard`
+          `${baseUrl}/dashboard`
         );
         if (magicLink) {
           await sendEmail({

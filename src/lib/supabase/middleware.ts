@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 // Aktualisiert Auth-Session via Cookies in Middleware-Kontext.
-// Routes-Protection für /app/* übernimmt darüber liegende middleware.ts.
+// Routes-Protection für /dashboard/* übernimmt darüber liegende middleware.ts.
 export async function updateSupabaseSession(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } });
 

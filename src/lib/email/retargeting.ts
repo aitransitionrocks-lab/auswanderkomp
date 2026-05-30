@@ -31,7 +31,7 @@ Du erhältst diese E-Mail als Käufer:in des Auswander-Kompass.
 }
 
 function upgradeLink(baseUrl: string, step: number): string {
-  return `${baseUrl}/app/upgrade?utm_source=retarget&utm_step=${step}`;
+  return `${baseUrl}/dashboard/upgrade?utm_source=retarget&utm_step=${step}`;
 }
 
 const SUBJECTS: Record<number, string> = {

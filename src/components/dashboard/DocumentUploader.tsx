@@ -1,37 +1,31 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-
-const CATEGORIES = [
-  { value: "identitaet", label: "Identität" },
-  { value: "familie", label: "Familie" },
-  { value: "finanzen", label: "Finanzen" },
-  { value: "arbeit", label: "Arbeit" },
-  { value: "bildung", label: "Bildung" },
-  { value: "gesundheit", label: "Gesundheit" },
-  { value: "wohnen", label: "Wohnen" },
-  { value: "versicherung", label: "Versicherung" },
-  { value: "sonstiges", label: "Sonstiges" },
-];
+import { VAULT_CATEGORIES } from "@/lib/vault/categories";
 
 export function DocumentUploader() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState("sonstiges");
+  const [subcategory, setSubcategory] = useState("sonstiges");
   const [notes, setNotes] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const subOptions = useMemo(
+    () => VAULT_CATEGORIES.find((c) => c.slug === category)?.subcategories ?? [],
+    [category]
+  );
 
   async function upload() {
     if (!file) return;
     setLoading(true);
     setError(null);
     try {
-      // 1) Signed Upload URL holen
-      const sigRes = await fetch("/api/documents/upload", {
+      const sigRes = await fetch("/api/dashboard/vault/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -43,7 +37,6 @@ export function DocumentUploader() {
       const sig = await sigRes.json();
       if (!sigRes.ok) throw new Error(sig.error ?? "Upload-URL fehlgeschlagen.");
 
-      // 2) Datei direkt zu Storage uploaden
       const putRes = await fetch(sig.signedUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type },
@@ -51,8 +44,7 @@ export function DocumentUploader() {
       });
       if (!putRes.ok) throw new Error("Upload nach Storage fehlgeschlagen.");
 
-      // 3) Metadaten speichern
-      const metaRes = await fetch("/api/documents", {
+      const metaRes = await fetch("/api/dashboard/vault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -61,6 +53,7 @@ export function DocumentUploader() {
           fileSizeBytes: file.size,
           mimeType: file.type,
           category,
+          tags: subcategory ? [subcategory] : [],
           notes: notes || undefined,
           expiresAt: expiresAt || undefined,
         }),
@@ -68,9 +61,9 @@ export function DocumentUploader() {
       const meta = await metaRes.json();
       if (!metaRes.ok) throw new Error(meta.error ?? "Metadaten-Speichern fehlgeschlagen.");
 
-      // Reset + Refresh
       setFile(null);
       setCategory("sonstiges");
+      setSubcategory("sonstiges");
       setNotes("");
       setExpiresAt("");
       if (fileRef.current) fileRef.current.value = "";
@@ -92,15 +85,31 @@ export function DocumentUploader() {
         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         className="block w-full text-[14px] mb-3"
       />
-      <div className="grid sm:grid-cols-2 gap-3 mb-3">
+      <div className="grid sm:grid-cols-3 gap-3 mb-3">
         <select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            const first = VAULT_CATEGORIES.find((c) => c.slug === e.target.value)
+              ?.subcategories[0]?.slug;
+            setSubcategory(first ?? "sonstiges");
+          }}
           className="px-3 py-2 rounded border border-line bg-paper text-[14px]"
         >
-          {CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>
+          {VAULT_CATEGORIES.map((c) => (
+            <option key={c.slug} value={c.slug}>
               {c.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={subcategory}
+          onChange={(e) => setSubcategory(e.target.value)}
+          className="px-3 py-2 rounded border border-line bg-paper text-[14px]"
+        >
+          {subOptions.map((s) => (
+            <option key={s.slug} value={s.slug}>
+              {s.label}
             </option>
           ))}
         </select>

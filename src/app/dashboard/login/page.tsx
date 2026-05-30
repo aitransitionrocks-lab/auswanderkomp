@@ -8,7 +8,7 @@ import { CompassGlyph } from "@/components/brand/CompassGlyph";
 
 function LoginInner() {
   const params = useSearchParams();
-  const next = params.get("next") ?? "/app/dashboard";
+  const next = params.get("next") ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"magic" | "password">("magic");
@@ -26,7 +26,7 @@ function LoginInner() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          emailRedirectTo: `${window.location.origin}/dashboard/auth/callback?next=${encodeURIComponent(next)}`,
           shouldCreateUser: false,
         },
       });
@@ -64,7 +64,7 @@ function LoginInner() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          redirectTo: `${window.location.origin}/dashboard/auth/callback?next=${encodeURIComponent(next)}`,
         },
       });
       if (error) throw error;

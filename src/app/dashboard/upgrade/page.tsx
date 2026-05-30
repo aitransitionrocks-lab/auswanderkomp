@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCurrentProfile, isLifetime } from "@/lib/supabase/profile";
-import { UpgradeButton } from "@/components/app/UpgradeButton";
+import { UpgradeButton } from "@/components/dashboard/UpgradeButton";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function UpgradePage() {
       <main className="max-w-page mx-auto px-6 md:px-16 py-16 text-center">
         <h1 className="font-serif text-3xl mb-3">Du bist bereits Lifetime-User</h1>
         <p className="text-inkSoft mb-6">Vollzugriff ist aktiv.</p>
-        <Link href="/app/dashboard" className="text-fir underline">
+        <Link href="/dashboard" className="text-fir underline">
           Zurück zum Dashboard
         </Link>
       </main>

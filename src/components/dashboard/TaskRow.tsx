@@ -44,7 +44,7 @@ export function TaskRow({
     setError(null);
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/tasks/${id}`, {
+        const res = await fetch(`/api/dashboard/tasks/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: newStatus }),
